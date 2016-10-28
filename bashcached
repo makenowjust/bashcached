@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# bashcached - memcached built on bash + ncat
+#
+# USAGE: bashcached [--port=PORT] [--maxconn=MAXCONN] [--timeout=TIMEOUT] [--check=CHECK]
+IFS=$' \t\r' VERSION=1.0.0.bashcached; export LANG=C
+help() { cat $0 | tail -n+2 | head -n3 | cut -c3-; exit; }
+for v in "$@"; do eval "${v:2}"; done
+
+# global variables
+unique=0 before=$(date +%s)
+declare -A flags=() exptime=() casUnique=() data=()
+
+# cache operator
+cache_has() { t=${exptime[$1]} && [[ $t && ( $t -eq 0 || $t -ge $time ) ]]; }
+cache_set() {
+  flags[$1]=$2 data[$1]=$4
+  exptime[$1]=$[0 < $3 && $3 <= 2592000 ? $3 + $time : $3]
+  [[ $5 ]] && casUnique[$1]=$5 || casUnique[$1]=$[unique++]; }
+cache_get() {
+  cache_has $1 && d=${data[$1]} && printf $'VALUE %s %s %s%s\r\n' \
+    $1 ${flags[$1]} $(echo -n $d | base64 -d | wc -c) "$([[ $2 ]] && echo " ${casUnique[$1]}")" &&
+    echo -n $d | base64 -d && echo -e '\r'; }
+cache_delete() { unset flags[$1] exptime[$1] casUnique[$1] data[$1]; }
+
+# utils
+read_data() { d=$(head -c $1 | base64 -w0); read; }
+base64_cat() { cat <(echo -n $1 | base64 -d) <(echo -n $2 | base64 -d) | base64 -w0; }
+
+# main loop
+main() {
+  local cmd d t i k
+  while read -ra cmd; do
+    notify=; while [[ -z $notify ]]; do eval "$(read < "$BASHCACHED_PIPE" && echo "$REPLY")"; done
+    eval "$(tail -n+1 "$notify")"
+    time=$(date +%s)
+    case ${cmd[0]} in
+    set) read_data ${cmd[4]} || return 1; cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d
+      [[ ${cmd[5]} != noreply ]] && echo -e "STORED\r" &;;
+    add) read_data ${cmd[4]} || return 1; ! cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d &&
+        result=STORED || result=NOT_STORED
+      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r" &;;
+    replace) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d &&
+        result=STORED || result=NOT_STORED
+      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r" &;;
+    append) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} \
+        $(base64_cat ${data[${cmd[1]}]} $d) && result=STORED || result=NOT_STORED
+      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r" &;;
+    prepend) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} \
+        $(base64_cat $d ${data[${cmd[1]}]}) && result=STORED || result=NOT_STORED
+      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r" &;;
+    cas) read_data ${cmd[4]} || return 1; if ! cache_has ${cmd[1]}; then result=NOT_FOUND
+      else [[ ${casUnique[${cmd[1]}]} -eq ${cmd[5]} ]] && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d &&
+        result=STORED || result=EXISTS; fi
+      [[ ${cmd[6]} != noreply ]] && echo -e "$result\r" &;;
+    get) (for ((i=1; i < ${#cmd[@]}; i++)); do cache_get ${cmd[$i]}; done
+      echo -e 'END\r') &;;
+    gets) (for ((i=1; i < ${#cmd[@]}; i++)); do cache_get ${cmd[$i]} 1; done
+      echo -e 'END\r') &;;
+    delete) cache_has ${cmd[1]} && cache_delete ${cmd[1]} &&
+        result=DELETED || result=NOT_FOUND
+      [[ ${cmd[2]} != noreply ]] && echo -e "$result\r" &;;
+    incr) cache_has ${cmd[1]} && result=$[$(echo -n ${data[${cmd[1]}]} | base64) + ${cmd[2]}] &&
+        cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${exptime[${cmd[1]}]} $result || result=NOT_FOUND
+      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r" &;;
+    decr) cache_has ${cmd[1]} && result=$[$(echo -n ${data[${cmd[1]}]} | base64) - ${cmd[2]}] &&
+        cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${exptime[${cmd[1]}]} $result || result=NOT_FOUND
+      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r" &;;
+    touch) cache_has ${cmd[1]} &&
+        cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${cmd[2]} "${data[${cmd[1]}]}" ${casUnique[${cmd[1]}]} &&
+        result=TOUCHED || result=NOT_FOUND
+      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r" &;;
+    flush_all) for k in ${!exptime[@]}; do exptime[$k]=$[$time + ${cmd[1]-0}]; done
+      [[ ${cmd[-1]} != noreply ]] && echo -e "OK\r" &;;
+    version) echo -e "VERSION $VERSION\r" &;;
+    quit) return 0;;
+    esac
+    declare -p unique flags exptime casUnique data | tail -n+1 >"$update"
+    unique= flags=() exptime=() casUnique=() data=()
+  done; }
+
+if [[ -z $BASHCACHED_PIPE ]]; then
+  BASHCACHED_PIPE="$(mktemp -u)"; mkfifo -m 600 "$BASHCACHED_PIPE"
+  ncat -C -m ${maxconn-100} -kl ${port-25252} -c "BASHCACHED_PIPE='$BASHCACHED_PIPE' $0" &
+  trap 'rm -f "'"$BASHCACHEF_PIPE"'" &&
+    lsof -t -i :'${port-25252}' | xargs kill &>/dev/null &' EXIT
+  while true; do
+    notify="$(mktemp -u)"; mkfifo -m 600 "$notify"
+    update="$(mktemp -u)"; mkfifo -m 600 "$update"
+    declare -p notify | tail -n+1 >"$BASHCACHED_PIPE"
+    declare -p unique flags exptime casUnique data update | tail -n+1 >"$notify"
+    (sleep ${timeout-10}; [[ -p $update ]] && echo ':' >"$update") &
+    eval "$(tail -n+1 "$update")"
+    rm -f "$update" "$notify"
+    time=$(date +%s) && (( $time - $before > ${check-60} )) &&
+      for k in ${!exptime[@]}; do ! cache_has $k && cache_delete $k; done && before=$(date +%s)
+  done
+else
+  main; [[ -p $update ]] && echo ':' >"$update"
+fi
