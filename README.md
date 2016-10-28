@@ -59,6 +59,8 @@ OPTIONS:
   --check=CHECK   interval to check each cache's expire (default: 60)
 $ ./bashcached &
 $ telnet localhost 25252
+version
+VERSION 2.0.0-bashcached
 set hello 0 0 11
 hello world
 STORED
