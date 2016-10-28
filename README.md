@@ -16,7 +16,7 @@ It is one file script (small, <100 lines!), and it requires only:
 
 So, you can use it as soon as you download it.
 
-And, it have been implemented almost all memcached commands:
+And, it implements almost all memcached commands:
 
   - `set`, `add`, `replace`, `append` and `prepend`
   - `get`, `delete` and `touch`
