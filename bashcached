@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-# bashcached - memcached built on bash + ncat
+# bashcached - memcached built on bash + socat
+# (C) TSUYUSATO "MakeNowJust" Kitsune 2016 <make.just.on@gmail.com>
 #
-# USAGE: bashcached [--port=PORT] [--maxconn=MAXCONN] [--timeout=TIMEOUT] [--check=CHECK]
-IFS=$' \t\r' VERSION=1.0.0.bashcached; export LANG=C
-help() { cat $0 | tail -n+2 | head -n3 | cut -c3-; exit; }
+# USAGE: bashcached [--port=PORT] [--check=CHECK]
+#
+# OPTIONS:
+#   --port=PORT     port to bind and listen (default: 25252)
+#   --check=CHECK   interval to check each cache's expire (default: 60)
+IFS=$' \t\r' VERSION=2.0.0-bashcached; export LANG=C
+help() { cat $0 | tail -n+2 | head -n8 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
 for v in "$@"; do eval "${v:2}"; done
 
 # global variables
@@ -32,6 +37,7 @@ main() {
   while read -ra cmd; do
     notify=; while [[ -z $notify ]]; do eval "$(read < "$BASHCACHED_PIPE" && echo "$REPLY")"; done
     eval "$(tail -n+1 "$notify")"
+    trap '[[ -p "'"$update"'" ]] && echo : >"'"$update"'"' EXIT
     time=$(date +%s)
     case ${cmd[0]} in
     set) read_data ${cmd[4]} || return 1; cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d
@@ -71,29 +77,23 @@ main() {
       [[ ${cmd[3]} != noreply ]] && echo -e "$result\r" &;;
     flush_all) for k in ${!exptime[@]}; do exptime[$k]=$[$time + ${cmd[1]-0}]; done
       [[ ${cmd[-1]} != noreply ]] && echo -e "OK\r" &;;
-    version) echo -e "VERSION $VERSION\r" &;;
-    quit) return 0;;
+    version) echo -e "VERSION $VERSION\r" &;; quit) return 0;;
     esac
     declare -p unique flags exptime casUnique data | tail -n+1 >"$update"
     unique= flags=() exptime=() casUnique=() data=()
   done; }
 
-if [[ -z $BASHCACHED_PIPE ]]; then
-  BASHCACHED_PIPE="$(mktemp -u)"; mkfifo -m 600 "$BASHCACHED_PIPE"
-  ncat -C -m ${maxconn-100} -kl ${port-25252} -c "BASHCACHED_PIPE='$BASHCACHED_PIPE' $0" &
-  trap 'rm -f "'"$BASHCACHEF_PIPE"'" &&
-    lsof -t -i :'${port-25252}' | xargs kill &>/dev/null &' EXIT
+[[ -p $BASHCACHED_PIPE ]] && main || {
+  export BASHCACHED_PIPE="$(mktemp -u)"; mkfifo -m 600 "$BASHCACHED_PIPE"
+  socat tcp-listen:${port-25252},fork system:"$0" &
+  trap 'rm -f "'"$BASHCACHEF_PIPE"'"' EXIT
   while true; do
     notify="$(mktemp -u)"; mkfifo -m 600 "$notify"
     update="$(mktemp -u)"; mkfifo -m 600 "$update"
     declare -p notify | tail -n+1 >"$BASHCACHED_PIPE"
     declare -p unique flags exptime casUnique data update | tail -n+1 >"$notify"
-    (sleep ${timeout-10}; [[ -p $update ]] && echo ':' >"$update") &
     eval "$(tail -n+1 "$update")"
     rm -f "$update" "$notify"
     time=$(date +%s) && (( $time - $before > ${check-60} )) &&
       for k in ${!exptime[@]}; do ! cache_has $k && cache_delete $k; done && before=$(date +%s)
-  done
-else
-  main; [[ -p $update ]] && echo ':' >"$update"
-fi
+  done; }

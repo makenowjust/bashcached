@@ -1,9 +1,9 @@
 # bashcached
 
-> memcached built on [bash] + [ncat]
+> memcached built on [bash] + [socat]
 
 [bash]: https://www.gnu.org/software/bash/
-[ncat]: https://nmap.org/ncat/
+[socat]: http://www.dest-unreach.org/socat/
 
 
 ## Feature
@@ -11,12 +11,11 @@
 It is one file script (small, <100 lines!), and it requires only:
 
   - `bash`
-  - `ncat`
-  - `lsof`
+  - `socat`
 
 So, you can use it as soon as you download it.
 
-And, it implements almost all memcached commands:
+And, it supports multiple connections and implements almost all memcached commands:
 
   - `set`, `add`, `replace`, `append` and `prepend`
   - `get`, `delete` and `touch`
@@ -30,13 +29,13 @@ And, it implements almost all memcached commands:
 You could install via `brew` if you use macOS:
 
 ```console
-$ brew install nmap
+$ brew install socat
 ```
 
 Or, you could install via `apt` if you use Ubuntu:
 
 ```console
-$ sudo apt install nmap lsof
+$ sudo apt install socat
 ```
 
 then, download and chmod.
@@ -50,9 +49,14 @@ $ chmod +x bashcached
 
 ```console
 $ ./bashcached --help
-bashcached - memcached built on bash + ncat
+bashcached - memcached built on bash + socat
+(C) TSUYUSATO "MakeNowJust" Kitsune 2016 <make.just.on@gmail.com>
 
-USAGE: bashcached [--port=PORT] [--maxconn=MAXCONN] [--timeout=TIMEOUT] [--check=CHECK]
+USAGE: bashcached [--port=PORT] [--check=CHECK]
+
+OPTIONS:
+  --port=PORT     port to bind and listen (default: 25252)
+  --check=CHECK   interval to check each cache's expire (default: 60)
 $ ./bashcached &
 $ telnet localhost 25252
 set hello 0 0 11
