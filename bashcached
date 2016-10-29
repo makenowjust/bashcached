@@ -86,7 +86,7 @@ main() {
 [[ -p $BASHCACHED_PIPE ]] && main || {
   export BASHCACHED_PIPE="$(mktemp -u)"; mkfifo -m 600 "$BASHCACHED_PIPE"
   socat tcp-listen:${port-25252},fork system:"$0" &
-  trap 'rm -f "'"$BASHCACHEF_PIPE"'"' EXIT
+  trap 'rm -f "'"$BASHCACHED_PIPE"'"' EXIT
   while true; do
     notify="$(mktemp -u)"; mkfifo -m 600 "$notify"
     update="$(mktemp -u)"; mkfifo -m 600 "$update"
