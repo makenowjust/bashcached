@@ -35,7 +35,7 @@ base64_cat() { cat <(echo -n $1 | base64 -d) <(echo -n $2 | base64 -d) | base64 
 main() {
   local cmd d t i k
   while read -ra cmd; do
-    notify=; while [[ -z $notify ]]; do eval "$(read < "$BASHCACHED_PIPE" && echo "$REPLY")"; done
+    notify=; while [[ ! -p $notify ]]; do eval "$(head -n1 "$BASHCACHED_PIPE")"; done
     eval "$(tail -n+1 "$notify")"
     trap '[[ -p "'"$update"'" ]] && echo : >"'"$update"'"' EXIT
     time=$(date +%s)
