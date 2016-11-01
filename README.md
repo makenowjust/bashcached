@@ -15,7 +15,7 @@ It is one file script (small, <100 lines!), and it requires only:
 
 So, you can use it as soon as you download it.
 
-And, it supports multiple connections and implements almost all memcached commands:
+It supports multiple connections and implements almost all memcached commands:
 
   - `set`, `add`, `replace`, `append` and `prepend`
   - `get`, `delete` and `touch`
@@ -24,15 +24,18 @@ And, it supports multiple connections and implements almost all memcached comman
   - `flush_all`
   - `version` and `quit`
 
+And, it supports to serve over `tcp`, `udp` and `unix` domain socket.
+
+
 ## Install
 
-You could install via `brew` if you use macOS:
+You could install `socat` via `brew` if you use macOS:
 
 ```console
 $ brew install socat
 ```
 
-Or, you could install via `apt` if you use Ubuntu:
+Or, you could install `socat` via `apt` if you use Ubuntu:
 
 ```console
 $ sudo apt install socat
@@ -45,6 +48,7 @@ $ curl -LO https://raw.githubusercontent.com/MakeNowJust/bashcached/master/bashc
 $ chmod +x bashcached
 ```
 
+
 ## Usage
 
 ```console
@@ -52,15 +56,18 @@ $ ./bashcached --help
 bashcached - memcached built on bash + socat
 (C) TSUYUSATO "MakeNowJust" Kitsune 2016 <make.just.on@gmail.com>
 
-USAGE: bashcached [--port=PORT] [--check=CHECK]
+USAGE: bashcached [--help] [--version] [--protocol=tcp|udp|unix] [--address=ADDRESS] [--check=CHECK]
 
 OPTIONS:
-  --port=PORT     port to bind and listen (default: 25252)
-  --check=CHECK   interval to check each cache's expire (default: 60)
+  --protocol=tcp|udp|unix  protocol name to bind and listen (default: tcp)
+  --address=ADDRESS        address (or filename) to bind and listen (default: 25252)
+  --check=CHECK            interval to check each cache's expire (default: 60)
+  --help                   show this help
+  --version                show bashcached's version
 $ ./bashcached &
 $ telnet localhost 25252
 version
-VERSION 2.0.0-bashcached
+VERSION 3.0.0-bashcached
 set hello 0 0 11
 hello world
 STORED

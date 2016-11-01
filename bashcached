@@ -2,98 +2,98 @@
 # bashcached - memcached built on bash + socat
 # (C) TSUYUSATO "MakeNowJust" Kitsune 2016 <make.just.on@gmail.com>
 #
-# USAGE: bashcached [--port=PORT] [--check=CHECK]
+# USAGE: bashcached [--help] [--version] [--protocol=tcp|udp|unix] [--address=ADDRESS] [--check=CHECK]
 #
 # OPTIONS:
-#   --port=PORT     port to bind and listen (default: 25252)
-#   --check=CHECK   interval to check each cache's expire (default: 60)
-IFS=$' \t\r' VERSION=2.0.0-bashcached; export LANG=C
-help() { cat $0 | tail -n+2 | head -n8 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
-for v in "$@"; do eval "${v:2}"; done
+#   --protocol=tcp|udp|unix  protocol name to bind and listen (default: tcp)
+#   --address=ADDRESS        address (or filename) to bind and listen (default: 25252)
+#   --check=CHECK            interval to check each cache's expire (default: 60)
+#   --help                   show this help
+#   --version                show bashcached's version
+IFS=$' \t\r' VERSION=3.0.0-bashcached; export LANG=C
 
-# global variables
-unique=0 before=$(date +%s)
-declare -A flags=() exptime=() casUnique=() data=()
+if [[ -p "$BASHCACHED_PIPE" ]]; then
+  send="$(mktemp -u)"; mkfifo -m 600 "$send"
+  recv="$(mktemp -u)"; mkfifo -m 600 "$recv"; while [[ -p "$recv" ]]; do cat "$recv"; done &
+  trap 'rm -f "'"$recv"'" "'"$send"'"' EXIT; recv64="$(echo "$recv" | base64 -w0)" send64="$(echo "$send" | base64 -w0)"
+  while read -ra cmd; do case ${cmd[0]} in
+    set|add|replace|append|prepend|cas)
+      while true; do printf '%s %s %s\r\n' $recv64 $send64 "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done
+      head -c ${cmd[4]-0} >"$send";;
+    quit) exit;; *) while true; do printf '%s %s %s\r\n' $recv64 $send64 "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done;;
+  esac; done
+else
+  help() { cat $0 | tail -n+2 | head -n11 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
+  for v in "$@"; do eval "${v:2}"; done
 
-# cache operator
-cache_has() { t=${exptime[$1]} && [[ $t && ( $t -eq 0 || $t -ge $time ) ]]; }
-cache_set() {
-  flags[$1]=$2 data[$1]=$4
-  exptime[$1]=$[0 < $3 && $3 <= 2592000 ? $3 + $time : $3]
-  [[ $5 ]] && casUnique[$1]=$5 || casUnique[$1]=$[unique++]; }
-cache_get() {
-  cache_has $1 && d=${data[$1]} && printf $'VALUE %s %s %s%s\r\n' \
-    $1 ${flags[$1]} $(echo -n $d | base64 -d | wc -c) "$([[ $2 ]] && echo " ${casUnique[$1]}")" &&
-    echo -n $d | base64 -d && echo -e '\r'; }
-cache_delete() { unset flags[$1] exptime[$1] casUnique[$1] data[$1]; }
+  # global variables
+  unique=0 before=$(date +%s)
+  declare -A flags=() exptime=() casUnique=() data=()
 
-# utils
-read_data() { d=$(head -c $1 | base64 -w0); read; }
-base64_cat() { cat <(echo -n $1 | base64 -d) <(echo -n $2 | base64 -d) | base64 -w0; }
+  # cache operator
+  cache_has() { t=${exptime[$1]} && [[ $t && ( $t -eq 0 || $t -gt $time ) ]]; }
+  cache_set() { flags[$1]=$2 data[$1]=$4
+    exptime[$1]=$[0 < $3 && $3 <= 2592000 ? $3 + $time : $3]
+    [[ $5 ]] && casUnique[$1]=$5 || casUnique[$1]=$[unique++]; }
+  cache_get() {
+    cache_has $1 && d=${data[$1]} && printf $'VALUE %s %s %s%s\r\n' \
+      $1 ${flags[$1]} $(echo -n $d | base64 -d | wc -c) "$([[ $2 ]] && echo " ${casUnique[$1]}")" &&
+      echo -n $d | base64 -d && echo -e '\r'; }
+  cache_delete() { unset flags[$1] exptime[$1] casUnique[$1] data[$1]; }
 
-# main loop
-main() {
-  local cmd d t i k
-  while read -ra cmd; do
-    notify=; while [[ ! -p $notify ]]; do eval "$(head -n1 "$BASHCACHED_PIPE")"; done
-    eval "$(tail -n+1 "$notify")"
-    trap '[[ -p "'"$update"'" ]] && echo : >"'"$update"'"' EXIT
-    time=$(date +%s)
+  # utils
+  read_data() { d=$(head -c $1 "$send" | base64 -w0); }
+  base64_cat() { cat <(echo -n $1 | base64 -d) <(echo -n $2 | base64 -d) | base64 -w0; }
+
+  export BASHCACHED_PIPE="$(mktemp -u)"; mkfifo -m 600 "$BASHCACHED_PIPE"
+  trap 'rm -f "'"$BASHCACHED_PIPE"'"' EXIT
+  socat ${protocol-tcp}-listen:${address-25252},fork system:"$0" &
+  while echo; do sleep ${check-60}; done >"$BASHCACHED_PIPE" &
+
+  # main loop
+  while true; do cat "$BASHCACHED_PIPE"; done | while read -ra cmd; do
+    recv="$(echo ${cmd[0]} | base64 -d)" send="$(echo ${cmd[1]} | base64 -d)"
+    cmd=("${cmd[@]:2}") time=$(date +%s)
+    (( $time - $before >= ${check-60} )) && for k in ${!exptime[@]}; do
+      ! cache_has $k && cache_delete $k; done && before=$time
+    [[ ! -p $recv || ! -p $send ]] && continue
     case ${cmd[0]} in
     set) read_data ${cmd[4]} || return 1; cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d
-      [[ ${cmd[5]} != noreply ]] && echo -e "STORED\r" &;;
+      [[ ${cmd[5]} != noreply ]] && echo -e "STORED\r">"$recv";;
     add) read_data ${cmd[4]} || return 1; ! cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d &&
         result=STORED || result=NOT_STORED
-      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r" &;;
+      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
     replace) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d &&
         result=STORED || result=NOT_STORED
-      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r" &;;
+      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
     append) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} \
         $(base64_cat ${data[${cmd[1]}]} $d) && result=STORED || result=NOT_STORED
-      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r" &;;
+      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
     prepend) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} \
         $(base64_cat $d ${data[${cmd[1]}]}) && result=STORED || result=NOT_STORED
-      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r" &;;
+      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
     cas) read_data ${cmd[4]} || return 1; if ! cache_has ${cmd[1]}; then result=NOT_FOUND
       else [[ ${casUnique[${cmd[1]}]} -eq ${cmd[5]} ]] && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d &&
         result=STORED || result=EXISTS; fi
-      [[ ${cmd[6]} != noreply ]] && echo -e "$result\r" &;;
+      [[ ${cmd[6]} != noreply ]] && echo -e "$result\r">"$recv";;
     get) (for ((i=1; i < ${#cmd[@]}; i++)); do cache_get ${cmd[$i]}; done
-      echo -e 'END\r') &;;
+      echo -e 'END\r')>"$recv";;
     gets) (for ((i=1; i < ${#cmd[@]}; i++)); do cache_get ${cmd[$i]} 1; done
-      echo -e 'END\r') &;;
+      echo -e 'END\r')>"$recv";;
     delete) cache_has ${cmd[1]} && cache_delete ${cmd[1]} &&
         result=DELETED || result=NOT_FOUND
-      [[ ${cmd[2]} != noreply ]] && echo -e "$result\r" &;;
+      [[ ${cmd[2]} != noreply ]] && echo -e "$result\r">"$recv";;
     incr) cache_has ${cmd[1]} && result=$[$(echo -n ${data[${cmd[1]}]} | base64) + ${cmd[2]}] &&
         cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${exptime[${cmd[1]}]} $result || result=NOT_FOUND
-      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r" &;;
+      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
     decr) cache_has ${cmd[1]} && result=$[$(echo -n ${data[${cmd[1]}]} | base64) - ${cmd[2]}] &&
         cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${exptime[${cmd[1]}]} $result || result=NOT_FOUND
-      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r" &;;
+      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
     touch) cache_has ${cmd[1]} &&
         cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${cmd[2]} "${data[${cmd[1]}]}" ${casUnique[${cmd[1]}]} &&
         result=TOUCHED || result=NOT_FOUND
-      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r" &;;
+      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
     flush_all) for k in ${!exptime[@]}; do exptime[$k]=$[$time + ${cmd[1]-0}]; done
-      [[ ${cmd[-1]} != noreply ]] && echo -e "OK\r" &;;
-    version) echo -e "VERSION $VERSION\r" &;; quit) return 0;;
-    esac
-    declare -p unique flags exptime casUnique data | tail -n+1 >"$update"
-    unique= flags=() exptime=() casUnique=() data=()
-  done; }
-
-[[ -p $BASHCACHED_PIPE ]] && main || {
-  export BASHCACHED_PIPE="$(mktemp -u)"; mkfifo -m 600 "$BASHCACHED_PIPE"
-  socat tcp-listen:${port-25252},fork system:"$0" &
-  trap 'rm -f "'"$BASHCACHED_PIPE"'"' EXIT
-  while true; do
-    notify="$(mktemp -u)"; mkfifo -m 600 "$notify"
-    update="$(mktemp -u)"; mkfifo -m 600 "$update"
-    declare -p notify | tail -n+1 >"$BASHCACHED_PIPE"
-    declare -p unique flags exptime casUnique data update | tail -n+1 >"$notify"
-    eval "$(tail -n+1 "$update")"
-    rm -f "$update" "$notify"
-    time=$(date +%s) && (( $time - $before > ${check-60} )) &&
-      for k in ${!exptime[@]}; do ! cache_has $k && cache_delete $k; done && before=$(date +%s)
-  done; }
+      [[ ${cmd[-1]} != noreply ]] && echo -e "OK\r">"$recv";;
+    version) echo -e "VERSION $VERSION\r">"$recv" &;;
+    esac; done; fi
