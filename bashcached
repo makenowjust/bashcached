@@ -24,7 +24,7 @@ if [[ -p "$BASHCACHED_PIPE" ]]; then
   esac; done
 else
   help() { cat $0 | tail -n+2 | head -n11 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
-  for v in "$@"; do eval "${v:2}"; done
+  for v in "$@"; do [[ $v == --* ]] && eval "${v:2}"; done
 
   # global variables
   unique=1 before=$(date +%s)
