@@ -15,7 +15,7 @@ IFS=$' \t\r' VERSION=3.1.0-bashcached; export LANG=C
 if [[ -p "$BASHCACHED_PIPE" ]]; then
   send="$(mktemp -u)"; mkfifo -m 600 "$send"
   recv="$(mktemp -u)"; mkfifo -m 600 "$recv"; while [[ -p "$recv" ]]; do cat "$recv" 2>/dev/null; done &
-  trap 'rm -f "'"$recv"'" "'"$send"'"' EXIT; recv64="$(echo "$recv" | base64 -w0)" send64="$(echo "$send" | base64 -w0)"
+  trap 'rm -f "$recv" "$send"' EXIT; recv64="$(echo "$recv" | base64 -w0)" send64="$(echo "$send" | base64 -w0)"
   while read -ra cmd; do case ${cmd[0]} in
     set|add|replace|append|prepend|cas)
       while true; do printf '%s %s %s\r\n' $recv64 $send64 "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done
@@ -46,7 +46,7 @@ else
   base64_cat() { cat <(echo -n $1 | base64 -d) <(echo -n $2 | base64 -d) | base64 -w0; }
 
   export BASHCACHED_PIPE="$(mktemp -u)"; mkfifo -m 600 "$BASHCACHED_PIPE"
-  trap 'rm -f "'"$BASHCACHED_PIPE"'"' EXIT
+  trap 'rm -f "$BASHCACHED_PIPE"' EXIT
   socat ${protocol-tcp}-listen:${address-25252},reuseaddr,fork system:"$0" &
   while echo; do sleep ${check-60}; done >"$BASHCACHED_PIPE" &
 
