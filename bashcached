@@ -27,7 +27,7 @@ else
   for v in "$@"; do eval "${v:2}"; done
 
   # global variables
-  unique=0 before=$(date +%s)
+  unique=1 before=$(date +%s)
   declare -A flags=() exptime=() casUnique=() data=()
 
   # cache operator
