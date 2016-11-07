@@ -19,7 +19,8 @@ if [[ -p "$BASHCACHED_PIPE" ]]; then
     set|add|replace|append|prepend|cas)
       while true; do printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done
       head -c ${cmd[4]-0} >"$send";;
-    quit) exit;; '') ;; *) while true; do printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done;;
+    quit) exit;; '') ;; *) while true; do
+      printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done;;
   esac; done
 else
   help() { cat $0 | tail -n+2 | head -n11 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
@@ -94,4 +95,5 @@ else
     flush_all) for k in ${!exptime[@]}; do exptime[$k]=$[$time + ${cmd[1]-0}]; done
       [[ ${cmd[-1]} != noreply ]] && echo -e "OK\r">"$recv";;
     version) echo -e "VERSION $VERSION\r">"$recv" &;;
-    esac; done; fi
+    esac; done
+fi
