@@ -15,12 +15,11 @@ IFS=$' \t\r' VERSION=3.1.0-bashcached; export LANG=C
 if [[ -p "$BASHCACHED_PIPE" ]]; then
   send="$(mktemp -u)"; mkfifo -m 600 "$send"
   recv="$(mktemp -u)"; mkfifo -m 600 "$recv"; while [[ -p "$recv" ]]; do cat "$recv" 2>/dev/null; done &
-  trap 'rm -f "$recv" "$send"' EXIT; recv64="$(echo "$recv" | base64 -w0)" send64="$(echo "$send" | base64 -w0)"
-  while read -ra cmd; do case ${cmd[0]} in
+  trap 'rm -f "$recv" "$send"' EXIT; while read -ra cmd; do case ${cmd[0]} in
     set|add|replace|append|prepend|cas)
-      while true; do printf '%s %s %s\r\n' $recv64 $send64 "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done
+      while true; do printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done
       head -c ${cmd[4]-0} >"$send";;
-    quit) exit;; *) while true; do printf '%s %s %s\r\n' $recv64 $send64 "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done;;
+    quit) exit;; '') ;; *) while true; do printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done;;
   esac; done
 else
   help() { cat $0 | tail -n+2 | head -n11 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
@@ -51,12 +50,11 @@ else
   while echo; do sleep ${check-60}; done >"$BASHCACHED_PIPE" &
 
   # main loop
-  while true; do cat "$BASHCACHED_PIPE"; done | while read -ra cmd; do
-    recv="$(echo ${cmd[0]} | base64 -d)" send="$(echo ${cmd[1]} | base64 -d)"
-    cmd=("${cmd[@]:2}") time=$(date +%s)
+  while true; do cat "$BASHCACHED_PIPE"; done | while read -r line; do
+    eval "$line"; cmd=($cmd) time=$(date +%s)
     (( $time - $before >= ${check-60} )) && for k in ${!exptime[@]}; do
       ! cache_has $k && cache_delete $k; done && before=$time
-    [[ ! -p $recv || ! -p $send ]] && continue
+    [[ ! -p $recv ]] && continue
     case ${cmd[0]} in
     set) read_data ${cmd[4]} || return 1; cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d
       [[ ${cmd[5]} != noreply ]] && echo -e "STORED\r">"$recv";;
