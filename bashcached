@@ -14,7 +14,7 @@ IFS=$' \t\r' VERSION=3.1.0-bashcached; export LANG=C
 
 if [[ -p "$BASHCACHED_PIPE" ]]; then
   send="$(mktemp -u)"; mkfifo -m 600 "$send"
-  recv="$(mktemp -u)"; mkfifo -m 600 "$recv"; while [[ -p "$recv" ]]; do cat "$recv"; done &
+  recv="$(mktemp -u)"; mkfifo -m 600 "$recv"; while [[ -p "$recv" ]]; do cat "$recv" 2>/dev/null; done &
   trap 'rm -f "'"$recv"'" "'"$send"'"' EXIT; recv64="$(echo "$recv" | base64 -w0)" send64="$(echo "$send" | base64 -w0)"
   while read -ra cmd; do case ${cmd[0]} in
     set|add|replace|append|prepend|cas)
