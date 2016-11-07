@@ -47,7 +47,7 @@ else
 
   export BASHCACHED_PIPE="$(mktemp -u)"; mkfifo -m 600 "$BASHCACHED_PIPE"
   trap 'rm -f "'"$BASHCACHED_PIPE"'"' EXIT
-  socat ${protocol-tcp}-listen:${address-25252},fork system:"$0" &
+  socat ${protocol-tcp}-listen:${address-25252},reuseaddr,fork system:"$0" &
   while echo; do sleep ${check-60}; done >"$BASHCACHED_PIPE" &
 
   # main loop
