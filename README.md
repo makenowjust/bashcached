@@ -56,18 +56,18 @@ $ ./bashcached --help
 bashcached - memcached built on bash + socat
 (C) TSUYUSATO "MakeNowJust" Kitsune 2016 <make.just.on@gmail.com>
 
-USAGE: bashcached [--help] [--version] [--protocol=tcp|udp|unix] [--address=ADDRESS] [--check=CHECK]
+USAGE: bashcached [--help] [--version] [--protocol=tcp|udp|unix] [--port=PORT] [--check=CHECK]
 
 OPTIONS:
   --protocol=tcp|udp|unix  protocol name to bind and listen (default: tcp)
-  --address=ADDRESS        address (or filename) to bind and listen (default: 25252)
+  --port=PORT              port (or filename) to bind and listen (default: 25252)
   --check=CHECK            interval to check each cache's expire (default: 60)
   --help                   show this help
   --version                show bashcached's version
 $ ./bashcached &
 $ telnet localhost 25252
 version
-VERSION 3.1.0-bashcached
+VERSION 4.0.0-bashcached
 set hello 0 0 11
 hello world
 STORED
