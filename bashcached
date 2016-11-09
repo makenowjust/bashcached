@@ -52,7 +52,7 @@ else
 
   # main loop
   while true; do cat "$BASHCACHED_PIPE"; done | while read -r line; do
-    eval "$line"; cmd=($cmd) time=$(printf '%(%s)T' -1)
+    cmd= recv= send=; eval "$line"; cmd=($cmd) time=$(printf '%(%s)T' -1)
     (( $time - $before >= ${check-60} )) && for k in ${!exptime[@]}; do
       ! cache_has $k && cache_delete $k; done && before=$time
     [[ ! -p $recv ]] && continue
