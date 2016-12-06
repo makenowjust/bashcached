@@ -82,11 +82,11 @@ else
     delete) cache_has ${cmd[1]} && cache_delete ${cmd[1]} &&
         result=DELETED || result=NOT_FOUND
       [[ ${cmd[2]} != noreply ]] && echo -e "$result\r">"$recv";;
-    incr) cache_has ${cmd[1]} && result=$[$(echo -n ${data[${cmd[1]}]} | base64) + ${cmd[2]}] &&
-        cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${exptime[${cmd[1]}]} $result || result=NOT_FOUND
+    incr) cache_has ${cmd[1]} && result=$[$(echo -n "${data[${cmd[1]}]}" | base64 -d) + ${cmd[2]-0}] &&
+        cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${exptime[${cmd[1]}]} "$(echo -n $result | base64)" || result=NOT_FOUND
       [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
-    decr) cache_has ${cmd[1]} && result=$[$(echo -n ${data[${cmd[1]}]} | base64) - ${cmd[2]}] &&
-        cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${exptime[${cmd[1]}]} $result || result=NOT_FOUND
+    decr) cache_has ${cmd[1]} && result=$[$(echo -n ${data[${cmd[1]}]} | base64 -d) - ${cmd[2]-0}] &&
+        cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${exptime[${cmd[1]}]} "$(echo -n $result | base64)" || result=NOT_FOUND
       [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
     touch) cache_has ${cmd[1]} &&
         cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${cmd[2]} "${data[${cmd[1]}]}" ${casUnique[${cmd[1]}]} &&
