@@ -32,18 +32,18 @@ else
 
   # cache operator
   cache_has() { t=${exptime[$1]} && [[ $t && ( $t -eq 0 || $t -gt $time ) ]]; }
-  cache_set() { flags[$1]=$2 data[$1]=$4
+  cache_set() { flags[$1]=$2 data[$1]="$4"
     exptime[$1]=$[0 < $3 && $3 <= 2592000 ? $3 + $time : $3]
     [[ $5 ]] && casUnique[$1]=$5 || casUnique[$1]=$[unique++]; }
   cache_get() {
-    cache_has $1 && d=${data[$1]} && printf $'VALUE %s %s %s%s\r\n' \
-      $1 ${flags[$1]} $(echo -n $d | base64 -d | wc -c) "$([[ $2 ]] && echo " ${casUnique[$1]}")" &&
-      echo -n $d | base64 -d && echo -e '\r'; }
+    cache_has $1 && d="${data[$1]}" && printf $'VALUE %s %s %s%s\r\n' \
+      $1 ${flags[$1]} $(echo -n "$d" | base64 -d | wc -c) "$([[ $2 ]] && echo " ${casUnique[$1]}")" &&
+      echo -n "$d" | base64 -d && echo -e '\r'; }
   cache_delete() { unset flags[$1] exptime[$1] casUnique[$1] data[$1]; }
 
   # utils
-  read_data() { d=$(head -c $1 "$send" | base64 -w0); }
-  base64_cat() { cat <(echo -n $1 | base64 -d) <(echo -n $2 | base64 -d) | base64 -w0; }
+  read_data() { d="$(head -c $1 "$send" | base64)"; }
+  base64_cat() { cat <(echo -n $1 | base64 -d) <(echo -n $2 | base64 -d) | base64; }
 
   export BASHCACHED_PIPE="$(mktemp -u)"; mkfifo -m 600 "$BASHCACHED_PIPE"
   trap 'rm -f "$BASHCACHED_PIPE"' EXIT
@@ -57,22 +57,22 @@ else
       ! cache_has $k && cache_delete $k; done && before=$time
     [[ ! -p $recv ]] && continue
     case ${cmd[0]} in
-    set) read_data ${cmd[4]} || return 1; cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d
+    set) read_data ${cmd[4]} || return 1; cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} "$d"
       [[ ${cmd[5]} != noreply ]] && echo -e "STORED\r">"$recv";;
-    add) read_data ${cmd[4]} || return 1; ! cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d &&
+    add) read_data ${cmd[4]} || return 1; ! cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} "$d" &&
         result=STORED || result=NOT_STORED
       [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
-    replace) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d &&
+    replace) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} "$d" &&
         result=STORED || result=NOT_STORED
       [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
     append) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} \
-        $(base64_cat ${data[${cmd[1]}]} $d) && result=STORED || result=NOT_STORED
+        $(base64_cat "${data[${cmd[1]}]}" "$d") && result=STORED || result=NOT_STORED
       [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
     prepend) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} \
-        $(base64_cat $d ${data[${cmd[1]}]}) && result=STORED || result=NOT_STORED
+        $(base64_cat "$d" "${data[${cmd[1]}]}") && result=STORED || result=NOT_STORED
       [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
     cas) read_data ${cmd[4]} || return 1; if ! cache_has ${cmd[1]}; then result=NOT_FOUND
-      else [[ ${casUnique[${cmd[1]}]} -eq ${cmd[5]} ]] && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} $d &&
+      else [[ ${casUnique[${cmd[1]}]} -eq ${cmd[5]} ]] && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} "$d" &&
         result=STORED || result=EXISTS; fi
       [[ ${cmd[6]} != noreply ]] && echo -e "$result\r">"$recv";;
     get) (for ((i=1; i < ${#cmd[@]}; i++)); do cache_get ${cmd[$i]}; done
