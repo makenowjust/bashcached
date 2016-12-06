@@ -29,10 +29,10 @@ And, it supports to serve over `tcp`, `udp` and `unix` domain socket.
 
 ## Install
 
-You could install `socat` via `brew` if you use macOS:
+You could install `socat` and `base64` via `brew` if you use macOS:
 
 ```console
-$ brew install socat
+$ brew install socat base64
 ```
 
 Or, you could install `socat` via `apt` if you use Ubuntu:
@@ -67,7 +67,7 @@ OPTIONS:
 $ ./bashcached &
 $ telnet localhost 25252
 version
-VERSION 4.0.0-bashcached
+VERSION 5.0.0-bashcached
 set hello 0 0 11
 hello world
 STORED
