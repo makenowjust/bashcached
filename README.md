@@ -29,11 +29,13 @@ And, it supports to serve over `tcp`, `udp` and `unix` domain socket.
 
 ## Install
 
-You could install `socat` and `base64` via `brew` if you use macOS:
+You could install `base64`, `bash` and `socat` via `brew` if you use macOS:
 
 ```console
-$ brew install socat base64
+$ brew install base64 bash base64
 ```
+
+(In fact, `bash` is installed in the default, however it is *too old* to run `bashcached`.)
 
 Or, you could install `socat` via `apt` if you use Ubuntu:
 
