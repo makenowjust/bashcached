@@ -32,7 +32,7 @@ And, it supports to serve over `tcp`, `udp` and `unix` domain socket.
 You could install `base64`, `bash` and `socat` via `brew` if you use macOS:
 
 ```console
-$ brew install base64 bash base64
+$ brew install base64 bash socat
 ```
 
 (In fact, `bash` is installed in the default, however it is *too old* to run `bashcached`.)
