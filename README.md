@@ -24,7 +24,7 @@ It supports multiple connections and implements almost all memcached commands:
   - `flush_all`
   - `version` and `quit`
 
-And, it supports to serve over `tcp`, `udp` and `unix` domain socket.
+And, it supports to serve over `tcp` and `unix` domain socket.
 
 
 ## Install
@@ -58,10 +58,10 @@ $ ./bashcached --help
 bashcached - memcached built on bash + socat
 (C) TSUYUSATO "MakeNowJust" Kitsune 2016 <make.just.on@gmail.com>
 
-USAGE: bashcached [--help] [--version] [--protocol=tcp|udp|unix] [--port=PORT] [--check=CHECK]
+USAGE: bashcached [--help] [--version] [--protocol=tcp|unix] [--port=PORT] [--check=CHECK]
 
 OPTIONS:
-  --protocol=tcp|udp|unix  protocol name to bind and listen (default: tcp)
+  --protocol=tcp|unix      protocol name to bind and listen (default: tcp)
   --port=PORT              port (or filename) to bind and listen (default: 25252)
   --check=CHECK            interval to check each cache's expire (default: 60)
   --help                   show this help
