@@ -5,7 +5,6 @@
 [bash]: https://www.gnu.org/software/bash/
 [socat]: http://www.dest-unreach.org/socat/
 
-
 ## Feature
 
 It is one file script (small, <100 lines!), and it requires only:
@@ -25,7 +24,6 @@ It supports multiple connections and implements almost all memcached commands:
   - `version` and `quit`
 
 And, it supports to serve over `tcp` and `unix` domain socket.
-
 
 ## Install
 
@@ -79,7 +77,6 @@ hello world
 END
 quit
 ```
-
 
 ## License and Copyright
 
