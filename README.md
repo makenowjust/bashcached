@@ -48,13 +48,12 @@ $ curl -LO https://raw.githubusercontent.com/MakeNowJust/bashcached/master/bashc
 $ chmod +x bashcached
 ```
 
-
 ## Usage
 
 ```console
 $ ./bashcached --help
 bashcached - memcached built on bash + socat
-(C) TSUYUSATO "MakeNowJust" Kitsune 2016 <make.just.on@gmail.com>
+(C) TSUYUSATO "MakeNowJust" Kitsune 2017 <make.just.on@gmail.com>
 
 USAGE: bashcached [--help] [--version] [--protocol=tcp|unix] [--port=PORT] [--check=CHECK]
 
