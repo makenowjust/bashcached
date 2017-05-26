@@ -44,7 +44,7 @@ $ sudo apt install socat
 then, download and chmod.
 
 ```console
-$ curl -LO https://raw.githubusercontent.com/MakeNowJust/bashcached/master/bashcached
+$ curl -LO https://git.io/bashcached
 $ chmod +x bashcached
 ```
 
