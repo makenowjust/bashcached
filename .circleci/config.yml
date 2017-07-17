@@ -1,0 +1,18 @@
+version: 2.0
+
+jobs:
+  build:
+    docker:
+      - image: ubuntu:17.10
+
+    steps:
+      - checkout
+      - run:
+          name: Install packages
+          command: |
+            apt-get update
+            apt-get install -y shellcheck
+      - run:
+          name: Run ShellCheck
+          command: shellcheck bashcached
+
