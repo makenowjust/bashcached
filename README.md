@@ -5,6 +5,8 @@
 [bash]: https://www.gnu.org/software/bash/
 [socat]: http://www.dest-unreach.org/socat/
 
+[![CircleCI](https://circleci.com/gh/MakeNowJust/bashcached.svg?style=svg)](https://circleci.com/gh/MakeNowJust/bashcached)
+
 ## Feature
 
 It is one file script (small, <100 lines!), and it requires only:
