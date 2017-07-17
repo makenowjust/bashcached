@@ -18,12 +18,12 @@ if [[ -p "$BASHCACHED_PIPE" ]]; then
   trap 'rm -f "$recv" "$send"' EXIT; while read -ra cmd; do case ${cmd[0]} in
     set|add|replace|append|prepend|cas)
       while true; do printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done
-      head -c ${cmd[4]-0} >"$send";;
+      head -c "${cmd[4]-0}" >"$send";;
     quit) exit;; '') ;; *) while true; do
       printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done;;
   esac; done
 else
-  help() { cat $0 | tail -n+2 | head -n11 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
+  help() { tail -n+2 <"$0" | head -n11 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
   for v in "$@"; do [[ $v == --* ]] && eval "${v:2}"; done
 
   # global variables
@@ -33,27 +33,27 @@ else
   # cache operator
   cache_has() { t=${exptime[$1]} && [[ $t && ( $t -eq 0 || $t -gt $time ) ]]; }
   cache_set() { flags[$1]=$2 data[$1]="$4"
-    exptime[$1]=$[0 < $3 && $3 <= 2592000 ? $3 + $time : $3]
-    [[ $5 ]] && casUnique[$1]=$5 || casUnique[$1]=$[unique++]; }
+    exptime[$1]=$((0 < $3 && $3 <= 2592000 ? $3 + time : $3))
+    [[ $5 ]] && casUnique[$1]="$5" || casUnique[$1]=$((unique++)); }
   cache_get() {
-    cache_has $1 && d="${data[$1]}" && printf $'VALUE %s %s %s%s\r\n' \
-      $1 ${flags[$1]} $(echo -n "$d" | base64 -d | wc -c) "$([[ $2 ]] && echo " ${casUnique[$1]}")" &&
+    cache_has "$1" && d="${data[$1]}" && printf $'VALUE %s %s %s%s\r\n' \
+      "$1" "${flags[$1]}" "$(echo -n "$d" | base64 -d | wc -c)" "$([[ $2 ]] && echo " ${casUnique[$1]}")" &&
       echo -n "$d" | base64 -d && echo -e '\r'; }
-  cache_delete() { unset flags[$1] exptime[$1] casUnique[$1] data[$1]; }
+  cache_delete() { unset "flags[$1]" "exptime[$1]" "casUnique[$1]" "data[$1]"; }
 
   # utils
-  read_data() { d="$(head -c $1 "$send" | base64)"; }
-  base64_cat() { cat <(echo -n $1 | base64 -d) <(echo -n $2 | base64 -d) | base64; }
+  read_data() { d="$(head -c "$1" "$send" | base64)"; }
+  base64_cat() { cat <(echo -n "$1" | base64 -d) <(echo -n "$2" | base64 -d) | base64; }
 
-  export BASHCACHED_PIPE="$(mktemp -u)"; mkfifo -m 600 "$BASHCACHED_PIPE"
+  BASHCACHED_PIPE="$(mktemp -u)"; export BASHCACHED_PIPE; mkfifo -m 600 "$BASHCACHED_PIPE"
   trap 'rm -f "$BASHCACHED_PIPE"' EXIT
-  socat ${protocol-tcp}-listen:${port-25252},reuseaddr,fork system:"$0" &
-  (( ${check-60} != 0 )) && while echo; do sleep ${check-60}; done >"$BASHCACHED_PIPE" &
+  socat "${protocol-tcp}-listen:${port-25252},reuseaddr,fork" system:"$0" &
+  (( ${check-60} != 0 )) && while echo; do sleep "${check-60}"; done >"$BASHCACHED_PIPE" &
 
   # main loop
   while true; do cat "$BASHCACHED_PIPE"; done | while read -r line; do
-    cmd= recv= send=; eval "$line"; cmd=($cmd) time=$(printf '%(%s)T' -1)
-    (( $time - $before >= ${check-60} )) && for k in ${!exptime[@]}; do
+    cmd='' recv='' send=; eval "$line"; cmd=($cmd) time=$(printf '%(%s)T' -1)
+    (( time - before >= ${check-60} )) && for k in "${!exptime[@]}"; do
       ! cache_has $k && cache_delete $k; done && before=$time
     [[ ! -p $recv ]] && continue
     case ${cmd[0]} in
@@ -66,10 +66,10 @@ else
         result=STORED || result=NOT_STORED
       [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
     append) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} \
-        $(base64_cat "${data[${cmd[1]}]}" "$d") && result=STORED || result=NOT_STORED
+        "$(base64_cat "${data[${cmd[1]}]}" "$d")" && result=STORED || result=NOT_STORED
       [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
     prepend) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} \
-        $(base64_cat "$d" "${data[${cmd[1]}]}") && result=STORED || result=NOT_STORED
+        "$(base64_cat "$d" "${data[${cmd[1]}]}")" && result=STORED || result=NOT_STORED
       [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
     cas) read_data ${cmd[4]} || return 1; if ! cache_has ${cmd[1]}; then result=NOT_FOUND
       else [[ ${casUnique[${cmd[1]}]} -eq ${cmd[5]} ]] && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} "$d" &&
@@ -82,17 +82,17 @@ else
     delete) cache_has ${cmd[1]} && cache_delete ${cmd[1]} &&
         result=DELETED || result=NOT_FOUND
       [[ ${cmd[2]} != noreply ]] && echo -e "$result\r">"$recv";;
-    incr) cache_has ${cmd[1]} && result=$[$(echo -n "${data[${cmd[1]}]}" | base64 -d) + ${cmd[2]-0}] &&
-        cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${exptime[${cmd[1]}]} "$(echo -n $result | base64)" || result=NOT_FOUND
+    incr) cache_has ${cmd[1]} && result=$(($(echo -n "${data[${cmd[1]}]}" | base64 -d) + ${cmd[2]-0})) &&
+        cache_set ${cmd[1]} "${flags[${cmd[1]}]}" ${exptime[${cmd[1]}]} "$(echo -n $result | base64)" || result=NOT_FOUND
       [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
-    decr) cache_has ${cmd[1]} && result=$[$(echo -n ${data[${cmd[1]}]} | base64 -d) - ${cmd[2]-0}] &&
-        cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${exptime[${cmd[1]}]} "$(echo -n $result | base64)" || result=NOT_FOUND
+    decr) cache_has ${cmd[1]} && result=$(($(echo -n "${data[${cmd[1]}]}" | base64 -d) - ${cmd[2]-0})) &&
+        cache_set ${cmd[1]} "${flags[${cmd[1]}]}" ${exptime[${cmd[1]}]} "$(echo -n $result | base64)" || result=NOT_FOUND
       [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
     touch) cache_has ${cmd[1]} &&
-        cache_set ${cmd[1]} ${flags[${cmd[1]}]} ${cmd[2]} "${data[${cmd[1]}]}" ${casUnique[${cmd[1]}]} &&
+        cache_set ${cmd[1]} "${flags[${cmd[1]}]}" ${cmd[2]} "${data[${cmd[1]}]}" ${casUnique[${cmd[1]}]} &&
         result=TOUCHED || result=NOT_FOUND
       [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
-    flush_all) for k in ${!exptime[@]}; do exptime[$k]=$[$time + ${cmd[1]-0}]; done
+    flush_all) for k in "${!exptime[@]}"; do exptime[$k]=$((time + ${cmd[1]-0})); done
       [[ ${cmd[-1]} != noreply ]] && echo -e "OK\r">"$recv";;
     version) echo -e "VERSION $VERSION\r">"$recv" &;;
     esac; done
