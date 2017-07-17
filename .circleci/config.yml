@@ -14,5 +14,7 @@ jobs:
             apt-get install -y shellcheck
       - run:
           name: Run ShellCheck
-          command: shellcheck bashcached
+          command: |
+            shellcheck --version
+            shellcheck bashcached
 
