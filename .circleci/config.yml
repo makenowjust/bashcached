@@ -6,12 +6,12 @@ jobs:
       - image: ubuntu:17.10
 
     steps:
-      - checkout
       - run:
           name: Install packages
           command: |
             apt-get update
-            apt-get install -y shellcheck
+            apt-get install -y git shellcheck
+      - checkout
       - run:
           name: Run ShellCheck
           command: |
