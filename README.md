@@ -68,7 +68,7 @@ OPTIONS:
 $ ./bashcached &
 $ telnet localhost 25252
 version
-VERSION 5.1.1-bashcached
+VERSION 5.1.2-bashcached
 set hello 0 0 11
 hello world
 STORED
