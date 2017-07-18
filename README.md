@@ -9,7 +9,7 @@
 
 ## Feature
 
-It is one file script (small, <100 lines!), and it requires only:
+It is one file script (small, `(($(< bashcached wc -l) < 100))`!), and it requires only:
 
   - `bash`
   - `socat`
