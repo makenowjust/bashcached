@@ -46,7 +46,6 @@ else
 
   BASHCACHED_PIPE="$(mktemp -u)"; export BASHCACHED_PIPE; mkfifo -m 600 "$BASHCACHED_PIPE"
   trap 'rm -f "$BASHCACHED_PIPE"' EXIT
-  socat "${protocol-tcp}-listen:${port-25252},reuseaddr,fork" system:"$0" &
   (( ${check-60} != 0 )) && while echo; do sleep "${check-60}"; done >"$BASHCACHED_PIPE" &
 
   # main loop
@@ -94,5 +93,7 @@ else
     flush_all) for k in "${!exptime[@]}"; do exptime[$k]=$((time + ${cmd[1]-0})); done
       [[ ${cmd[-1]} != noreply ]] && echo -e "OK\r">"$recv";;
     version) echo -e "VERSION $VERSION\r">"$recv" &;;
-    esac; done
+    esac; done &
+
+  socat "${protocol-tcp}-listen:${port-25252},reuseaddr,fork" system:"$0"
 fi
