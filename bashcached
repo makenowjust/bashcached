@@ -11,6 +11,7 @@
 #   --help                   show this help
 #   --version                show bashcached's version
 IFS=$' \t\r' VERSION=5.1.2-bashcached; export LANG=C
+trap 'exit 0' INT TERM
 
 if [[ -p "$BASHCACHED_PIPE" ]]; then
   send="$(mktemp -u)"; mkfifo -m 600 "$send"
