@@ -33,13 +33,11 @@ else
 
   # cache operator
   cache_has() { t=${exptime[$1]} && [[ $t && ( $t -eq 0 || $t -gt $time ) ]]; }
-  cache_set() { flags[$1]=$2 data[$1]="$4"
-    exptime[$1]=$((0 < $3 && $3 <= 2592000 ? $3 + time : $3))
-    [[ $5 ]] && casUnique[$1]="$5" || casUnique[$1]=$((unique++)); }
-  cache_get() {
-    cache_has "$1" && d="${data[$1]}" && printf $'VALUE %s %s %s%s\r\n' \
-      "$1" "${flags[$1]}" "$(echo -n "$d" | base64 -d | wc -c)" "$([[ $2 ]] && echo " ${casUnique[$1]}")" &&
-      echo -n "$d" | base64 -d && echo -e '\r'; }
+  cache_update() { data[$1]=$2; [[ $3 ]] && casUnique[$1]="$3" || casUnique[$1]=$((unique++)); }
+  cache_set() { flags[$1]=$2 exptime[$1]=$((0 < $3 && $3 <= 2592000 ? $3 + time : $3)); cache_update "$1" "$4" "$5"; }
+  cache_get() { cache_has "$1" && d="${data[$1]}" && printf $'VALUE %s %s %s%s\r\n' \
+    "$1" "${flags[$1]}" "$(echo -n "$d" | base64 -d | wc -c)" "$([[ $2 ]] && echo " ${casUnique[$1]}")" &&
+    echo -n "$d" | base64 -d && echo -e '\r'; }
   cache_delete() { unset "flags[$1]" "exptime[$1]" "casUnique[$1]" "data[$1]"; }
 
   # utils
@@ -66,10 +64,10 @@ else
     replace) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} "$d" &&
         result=STORED || result=NOT_STORED
       [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
-    append) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} \
+    append) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_update ${cmd[1]} \
         "$(base64_cat "${data[${cmd[1]}]}" "$d")" && result=STORED || result=NOT_STORED
       [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
-    prepend) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} \
+    prepend) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_update ${cmd[1]} \
         "$(base64_cat "$d" "${data[${cmd[1]}]}")" && result=STORED || result=NOT_STORED
       [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
     cas) read_data ${cmd[4]} || return 1; if ! cache_has ${cmd[1]}; then result=NOT_FOUND
@@ -84,10 +82,10 @@ else
         result=DELETED || result=NOT_FOUND
       [[ ${cmd[2]} != noreply ]] && echo -e "$result\r">"$recv";;
     incr) cache_has ${cmd[1]} && result=$(($(echo -n "${data[${cmd[1]}]}" | base64 -d) + ${cmd[2]-0})) &&
-        cache_set ${cmd[1]} "${flags[${cmd[1]}]}" ${exptime[${cmd[1]}]} "$(echo -n $result | base64)" || result=NOT_FOUND
+        cache_update ${cmd[1]} "$(echo -n $result | base64)" || result=NOT_FOUND
       [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
     decr) cache_has ${cmd[1]} && result=$(($(echo -n "${data[${cmd[1]}]}" | base64 -d) - ${cmd[2]-0})) &&
-        cache_set ${cmd[1]} "${flags[${cmd[1]}]}" ${exptime[${cmd[1]}]} "$(echo -n $result | base64)" || result=NOT_FOUND
+        cache_update ${cmd[1]} "$(echo -n $result | base64)" || result=NOT_FOUND
       [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
     touch) cache_has ${cmd[1]} &&
         cache_set ${cmd[1]} "${flags[${cmd[1]}]}" ${cmd[2]} "${data[${cmd[1]}]}" ${casUnique[${cmd[1]}]} &&
