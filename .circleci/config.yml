@@ -3,18 +3,20 @@ version: 2.0
 jobs:
   build:
     docker:
-      - image: ubuntu:17.10
+      - image: makenowjust/bashcached-circleci-test:latest
 
     steps:
-      - run:
-          name: Install packages
-          command: |
-            apt-get update
-            apt-get install -y git shellcheck
       - checkout
       - run:
-          name: Run ShellCheck
+          name: Run shellcheck
           command: |
             shellcheck --version
             shellcheck bashcached
-
+      - run:
+          name: Run tests
+          command: |
+            ruby --version
+            rake --version
+            memcached -V
+            rake test TEST_MEMCACHED=1
+            rake test
