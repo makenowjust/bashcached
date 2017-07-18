@@ -1,6 +1,6 @@
 # bashcached
 
-> memcached built on [bash] + [socat]
+> memcached server built on [bash] + [socat]
 
 [bash]: https://www.gnu.org/software/bash/
 [socat]: http://www.dest-unreach.org/socat/
