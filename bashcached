@@ -13,7 +13,7 @@
 IFS=$' \t\r' VERSION=5.1.2-bashcached; export LANG=C
 trap 'exit 0' INT TERM
 
-if [[ -p "$BASHCACHED_PIPE" ]]; then
+if [[ "$SOCAT_VERSION" ]]; then
   send="$(mktemp -u)"; mkfifo -m 600 "$send"
   recv="$(mktemp -u)"; mkfifo -m 600 "$recv"; while [[ -p "$recv" ]]; do cat "$recv" 2>/dev/null; done &
   trap 'rm -f "$recv" "$send"' EXIT; while read -ra cmd; do case ${cmd[0]} in
