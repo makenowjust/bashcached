@@ -42,7 +42,7 @@ def with_bashcached(opts = "", timeout: 5)
 end
 
 def with_client(port = 25252)
-  TCPSocket.open("localhost", 25252) do |client|
+  TCPSocket.open("localhost", port) do |client|
     yield client
   end
   nil
