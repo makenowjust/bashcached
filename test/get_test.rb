@@ -70,7 +70,6 @@ describe "get" do
     end
   end
 
-
   it "can get an empty value" do
     with_bashcached_and_client do |client|
       expect_set client, value: ""
