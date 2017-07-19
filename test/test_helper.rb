@@ -40,6 +40,9 @@ class MiniTest::Test
         # TODO: retry limit is needed?
         retry
       end
+
+      # Cool down...
+      sleep 0.1
     end
   end
 
