@@ -8,6 +8,18 @@ require "timeout"
 TEST_MEMCACHED = ENV.has_key?("TEST_MEMCACHED")
 
 class MiniTest::Test
+  def retry_on_error(times: 10, delay: 0.1, error_class: StandardError)
+    (1..times).each do |i|
+      begin
+        return yield
+      rescue error_class
+        sleep delay
+        raise if i == times
+        next
+      end
+    end
+  end
+
   def with_command(command, timeout:)
     Open3.popen3(*command, pgroup: true) do |*, thread|
       begin
@@ -43,10 +55,12 @@ class MiniTest::Test
   end
 
   def with_client(port = 25252)
-    TCPSocket.open("localhost", port) do |client|
-      yield client
-    end
+    # Sometimes TCPSocket.new is failed, so retry_on_error is needed.
+    client = retry_on_error { TCPSocket.new("localhost", port) }
+    yield client
     nil
+  ensure
+    client&.close
   end
 
   def with_bashcached_and_client
