@@ -33,9 +33,9 @@ describe "add" do
 
   it "stores a value with exptime" do
     with_bashcached_and_client do |client|
-      expect_add client, value: "test", exptime: 1
+      expect_add client, value: "test", exptime: 2
       expect_get client, value: "test"
-      sleep 1.5
+      sleep 2.5
       expect_not_get client
     end
   end

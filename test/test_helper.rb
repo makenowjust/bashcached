@@ -31,7 +31,7 @@ end
 TEST_MEMCACHED = ENV.has_key?("TEST_MEMCACHED")
 SERVER_COMMAND = TEST_MEMCACHED ? "memcached -p 25252" : "./bashcached"
 
-def with_bashcached(opts = "", timeout: 3)
+def with_bashcached(opts = "", timeout: 5)
   with_command("#{SERVER_COMMAND} #{opts}", timeout: timeout) do
     # Wait to start a bashcached server
     # TODO: find better way (e.g. using 'expect' library)

@@ -43,9 +43,9 @@ describe "replace" do
   it "stores a value with exptime" do
     with_bashcached_and_client do |client|
       expect_set client, value: "test1"
-      expect_replace client, value: "test2", exptime: 1
+      expect_replace client, value: "test2", exptime: 2
       expect_get client, value: "test2"
-      sleep 1.5
+      sleep 2.5
       expect_not_get client
     end
   end
@@ -53,10 +53,10 @@ describe "replace" do
   it "overwrites exptime" do
     with_bashcached_and_client do |client|
       expect_set client, value: "test1"
-      expect_replace client, value: "test2", exptime: 1
+      expect_replace client, value: "test2", exptime: 2
       expect_replace client, value: "test3", exptime: 0
       expect_get client, value: "test3"
-      sleep 1.5
+      sleep 2.5
       expect_get client, value: "test3"
     end
   end

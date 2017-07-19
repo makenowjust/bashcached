@@ -40,9 +40,9 @@ describe "decr" do
 
   it "does not overwrite flags" do
     with_bashcached_and_client do |client|
-      expect_set client, value: "42", exptime: 1
+      expect_set client, value: "42", exptime: 2
       expect_decr client, expect: 41
-      sleep 1.5
+      sleep 2.5
       expect_not_get client
     end
   end

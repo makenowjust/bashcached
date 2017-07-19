@@ -53,19 +53,19 @@ describe "get" do
 
   it "cannot get a value after exptime (> 2592000)" do
     with_bashcached_and_client do |client|
-      expect_set client, value: "test", exptime: Time.now.to_i + 1
+      expect_set client, value: "test", exptime: Time.now.to_i + 2
       expect_get client, value: "test"
-      sleep 1.5
+      sleep 2.5
       expect_not_get client
     end
   end
 
   it "overwrites exptime" do
     with_bashcached_and_client do |client|
-      expect_set client, value: "test1", exptime: 1
+      expect_set client, value: "test1", exptime: 2
       expect_set client, value: "test2", exptime: 0
       expect_get client, value: "test2"
-      sleep 1.5
+      sleep 2.5
       expect_get client, value: "test2"
     end
   end
