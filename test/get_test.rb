@@ -27,11 +27,14 @@ describe "get" do
     end
   end
 
-  it "can get many values" do
+  it "can get many values at once" do
     with_bashcached_and_client do |client|
-      expect_set client, key: "test1", value: "test"
-      expect_set client, key: "test2", value: "test"
-      expect_get_many client, "test1" => "test", "test2" => "test"
+      expect_set client, key: "test1", value: "test_value1"
+      expect_set client, key: "test2", value: "test_value2"
+      expect_get_many client, {
+        "test1" => {value: "test_value1"},
+        "test2" => {value: "test_value2"},
+      }
     end
   end
 

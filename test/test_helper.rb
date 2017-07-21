@@ -121,20 +121,33 @@ class MiniTest::Test
     client.gets.must_equal "END\r\n"
   end
 
+  def expect_gets(client, key: "test", value:, cas_unique:, flags: 0)
+    expect_get_many client, key => {value: value, cas_unique: cas_unique, flags: flags}
+  end
+
+  VALUE_LINE_RE = %r{
+    \A
+    VALUE
+    \ (?<key>[^\ ]+)
+    \ (?<flags>\d+)
+    \ (?<bytes>\d+)
+    (?:\ (?<cas_unique>\d+))?
+    \r\n
+    \z
+  }x
+
   def expect_get_many(client, expects)
-    client << "get #{expects.keys.join " "}\r\n"
-    until expects.empty?
-      if client.gets =~ /VALUE (?<key>[^ ]+) (?<flags>[^ ]+) (?<bytes>[^ ]+)\r\n/
+    command = expects.first.last.has_key?(:cas_unique) ? "gets" : "get"
+    client << "#{command} #{expects.keys.join " "}\r\n"
+    while !expects.empty? && (line = client.gets)
+      if line =~ VALUE_LINE_RE
         expect = expects.delete $~[:key]
-        if expect.is_a?(Hash)
-          expect_value = expect[:value]
-          expect_flags = expect[:flags]&.to_s || "0"
-        else
-          expect_value = expect
-          expect_flags = "0"
-        end
+        expect_value = expect[:value]
+        expect_flags = expect[:flags]&.to_s || "0"
+        expect_cas_unique = expect[:cas_unique]&.to_s
 
         $~[:flags].must_equal expect_flags
+        $~[:cas_unique].must_equal expect_cas_unique if expect_cas_unique
         client.read($~[:bytes].to_i).must_equal expect_value.b
         client.gets.must_equal "\r\n"
       end
