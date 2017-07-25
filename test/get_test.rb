@@ -47,9 +47,9 @@ describe "get" do
 
   it "cannot get a value after exptime (<= 2592000)" do
     with_bashcached_and_client do |client|
-      expect_set client, value: "test", exptime: 1
+      expect_set client, value: "test", exptime: 2
       expect_get client, value: "test"
-      sleep 1.5
+      sleep 2.5
       expect_not_get client
     end
   end
