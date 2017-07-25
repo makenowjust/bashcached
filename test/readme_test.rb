@@ -15,10 +15,10 @@ describe "readme" do
     example = File.read("README.md")
                   .match(%r{(?<=^\$ telnet localhost 25252\n).*?(?=^```)}m)
                   .to_s
-                  # TODO: .lines(chomp: true)
-                  # ruby on ubuntu 17.10 is still 2.3.x...
                   .lines
                   .map(&:chomp)
+                  # TODO: .lines(chomp: true)
+                  # ruby on ubuntu 17.10 is still 2.3.x...
     with_bashcached_and_client do |client|
       while example.empty?
         case line = example.shift
