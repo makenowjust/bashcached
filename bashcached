@@ -24,7 +24,9 @@ if [[ "$SOCAT_VERSION" ]]; then
       printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done;;
   esac; done
 else
-  help() { tail -n+2 <"$0" | head -n11 | cut -c3-; exit; }; version() { echo $VERSION; exit; }; license() { curl 'https://raw.githubusercontent.com/MakeNowJust/bashcached/master/LICENSE.MIT.md'; echo; curl 'https://raw.githubusercontent.com/MakeNowJust/bashcached/master/LICENSE.%F0%9F%8D%A3.md'; exit; };
+  help() { tail -n+2 <"$0" | head -n11 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
+  license() { curl 'https://raw.githubusercontent.com/MakeNowJust/bashcached/master/LICENSE.MIT.md'; echo;
+    curl 'https://raw.githubusercontent.com/MakeNowJust/bashcached/master/LICENSE.%F0%9F%8D%A3.md'; exit; }
   for v in "$@"; do [[ $v == --* ]] && eval "${v:2}"; done
 
   # global variables
@@ -48,7 +50,6 @@ else
   trap 'rm -f "$BASHCACHED_PIPE"' EXIT
   (( ${check-60} != 0 )) && while echo; do sleep "${check-60}"; done >"$BASHCACHED_PIPE" &
 
-  # main loop
   while true; do cat "$BASHCACHED_PIPE"; done | while read -r line; do
     cmd='' recv='' send=; eval "$line"; cmd=($cmd) time=$(printf '%(%s)T' -1)
     (( time - before >= ${check-60} )) && for k in "${!exptime[@]}"; do
@@ -94,6 +95,5 @@ else
       [[ ${cmd[-1]} != noreply ]] && echo -e "OK\r">"$recv";;
     version) echo -e "VERSION $VERSION\r">"$recv" &;;
     esac; done &
-
   socat "${protocol-tcp}-listen:${port-25252},reuseaddr,fork" system:"$0"
 fi
