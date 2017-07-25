@@ -74,8 +74,8 @@ class MiniTest::Test
     end
   end
 
-  def write_store_command(client, command, key, flags, exptime, value, noreply)
-    client << "#{command} #{key} #{flags} #{exptime} #{value.bytesize}#{noreply ? " noreply" : ""}\r\n"
+  def write_store_command(client, command, key, flags, exptime, value, noreply, cas_unique = nil)
+    client << "#{command} #{key} #{flags} #{exptime} #{value.bytesize}#{cas_unique && " #{cas_unique}"}#{noreply ? " noreply" : ""}\r\n"
     client << "#{value.b}\r\n"
   end
 
@@ -109,6 +109,13 @@ class MiniTest::Test
     write_store_command client, "prepend", key, flags, exptime, value, noreply
     unless noreply
       client.gets.must_equal "#{not_stored ? "NOT_STORED" : "STORED"}\r\n"
+    end
+  end
+
+  def expect_cas(client, key: "test", value:, flags: 0, exptime: 0, cas_unique:, noreply: false, result:)
+    write_store_command client, "cas", key, flags, exptime, value, noreply, cas_unique
+    unless noreply
+      client.gets.must_equal "#{result}\r\n"
     end
   end
 
