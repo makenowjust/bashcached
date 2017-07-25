@@ -18,8 +18,8 @@ if [[ "$SOCAT_VERSION" ]]; then
   recv="$(mktemp -u)"; mkfifo -m 600 "$recv"; while [[ -p "$recv" ]]; do cat "$recv" 2>/dev/null; done &
   trap 'rm -f "$recv" "$send"' EXIT; while read -ra cmd; do case ${cmd[0]} in
     set|add|replace|append|prepend|cas)
-      while true; do printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done
-      head -c "${cmd[4]-0}" >"$send";;
+      while true; do printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break
+      done; head -c "${cmd[4]-0}" >"$send";;
     quit) exit;; '') ;; *) while true; do
       printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done;;
   esac; done
