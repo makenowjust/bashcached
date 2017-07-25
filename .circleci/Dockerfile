@@ -7,7 +7,10 @@ RUN apt-get update && apt-get install -y \
     ruby \
     socat \
     memcached \
+    locales \
  && rm -rf /var/lib/apt/lists/* \
- && useradd -ms /bin/bash bashcached
+ && useradd -ms /bin/bash bashcached \
+ && locale-gen en_US.UTF-8
 
 USER bashcached
+ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
