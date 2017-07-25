@@ -24,7 +24,7 @@ if [[ "$SOCAT_VERSION" ]]; then
       printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done;;
   esac; done
 else
-  help() { tail -n+2 <"$0" | head -n11 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
+  help() { tail -n+2 <"$0" | head -n11 | cut -c3-; exit; }; version() { echo $VERSION; exit; }; license() { curl 'https://raw.githubusercontent.com/MakeNowJust/bashcached/master/LICENSE.MIT.md'; echo; curl 'https://raw.githubusercontent.com/MakeNowJust/bashcached/master/LICENSE.%F0%9F%8D%A3.md'; exit; };
   for v in "$@"; do [[ $v == --* ]] && eval "${v:2}"; done
 
   # global variables
