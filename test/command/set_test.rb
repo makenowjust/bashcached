@@ -1,6 +1,6 @@
-require_relative "test_helper"
+require_relative "../test_helper"
 
-describe "set" do
+describe "command/set" do
   it "sets a value with key and responds with 'STORED'" do
     with_bashcached_and_client do |client|
       expect_set client, value: "test"

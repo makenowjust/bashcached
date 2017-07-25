@@ -1,6 +1,6 @@
-require_relative "test_helper"
+require_relative "../test_helper"
 
-describe "touch" do
+describe "command/touch" do
   it "does not set exptime if the key does not exist" do
     with_bashcached_and_client do |client|
       expect_touch client, exptime: 0, not_found: true

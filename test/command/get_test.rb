@@ -1,6 +1,6 @@
-require_relative "test_helper"
+require_relative "../test_helper"
 
-describe "get" do
+describe "command/get" do
   it "gets a stored value" do
     with_bashcached_and_client do |client|
       expect_set client, value: "test"

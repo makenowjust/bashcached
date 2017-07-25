@@ -1,6 +1,6 @@
-require_relative "test_helper"
+require_relative "../test_helper"
 
-describe "cas" do
+describe "command/cas" do
   it "stores a value if cas_unique is correct" do
     with_bashcached_and_client do |client|
       expect_set client, value: "test1"

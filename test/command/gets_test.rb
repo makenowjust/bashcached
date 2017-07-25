@@ -1,6 +1,6 @@
-require_relative "test_helper"
+require_relative "../test_helper"
 
-describe "gets" do
+describe "command/gets" do
   it "can get cas unique" do
     with_bashcached_and_client do |client|
       expect_set client, value: "test"

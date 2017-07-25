@@ -1,6 +1,6 @@
-require_relative "test_helper"
+require_relative "../test_helper"
 
-describe "version" do
+describe "command/version" do
   it "returns a version string" do
     skip "bashcached doesn't know memcached version" if TEST_MEMCACHED
 

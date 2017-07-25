@@ -1,6 +1,6 @@
-require_relative "test_helper"
+require_relative "../test_helper"
 
-describe "replace" do
+describe "command/replace" do
   it "does not store a value if the key does not exist" do
     with_bashcached_and_client do |client|
       expect_replace client, value: "test", not_stored: true

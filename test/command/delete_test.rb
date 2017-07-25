@@ -1,6 +1,6 @@
-require_relative "test_helper"
+require_relative "../test_helper"
 
-describe "delete" do
+describe "command/delete" do
   it "does not delete the key if the key does not exist" do
     with_bashcached_and_client do |client|
       expect_delete client, not_found: true

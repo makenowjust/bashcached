@@ -1,6 +1,6 @@
-require_relative "test_helper"
+require_relative "../test_helper"
 
-describe "add" do
+describe "command/add" do
   it "stores a value if the key does not exist" do
     with_bashcached_and_client do |client|
       expect_add client, value: "test"

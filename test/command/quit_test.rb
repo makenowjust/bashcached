@@ -1,6 +1,6 @@
-require_relative "test_helper"
+require_relative "../test_helper"
 
-describe "quit" do
+describe "command/quit" do
   it "terminate the client connection" do
     with_bashcached_and_client do |client|
       client << "quit\r\n"

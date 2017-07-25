@@ -1,6 +1,6 @@
-require_relative "test_helper"
+require_relative "../test_helper"
 
-describe "incr" do
+describe "command/incr" do
   it "does not increment a value if the key does not exist" do
     with_bashcached_and_client do |client|
       expect_incr client, expect: "NOT_FOUND"
