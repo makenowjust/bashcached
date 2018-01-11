@@ -6,6 +6,7 @@
 [socat]: http://www.dest-unreach.org/socat/
 
 [![CircleCI](https://circleci.com/gh/MakeNowJust/bashcached.svg?style=svg)](https://circleci.com/gh/MakeNowJust/bashcached)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FMakeNowJust%2Fbashcached.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FMakeNowJust%2Fbashcached?ref=badge_shield)
 
 ## Feature
 
@@ -83,3 +84,6 @@ quit
 
 MIT and [:sushi:](https://github.com/MakeNowJust/sushi-ware)
 © TSUYUSATO "[MakeNowJust](https://quine.codes)" Kitsune <<make.just.on@gmail.com>> 2016-2018
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FMakeNowJust%2Fbashcached.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FMakeNowJust%2Fbashcached?ref=badge_large)
