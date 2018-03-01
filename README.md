@@ -35,7 +35,7 @@ You could install `base64`, `bash` and `socat` via `brew` if you use macOS:
 $ brew install base64 bash socat
 ```
 
-(In fact, `bash` is installed in the default, however it is *too old* to run `bashcached`.)
+(In fact, `bash` is installed in the default on macOS, however it is *too old* to run `bashcached`.)
 
 Or, you could install `socat` via `apt` if you use Ubuntu:
 
@@ -48,6 +48,12 @@ then, download and chmod.
 ```console
 $ curl -LO https://git.io/bashcached
 $ chmod +x bashcached
+```
+
+Or, you could use [`bpkg`](https://github.com/bpkg/bpkg) instaed of downloading script:
+
+```console
+$ bpkg install MakeNowJust/bashcached -g
 ```
 
 ## Usage
