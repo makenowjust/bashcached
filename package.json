@@ -2,6 +2,8 @@
   "name": "bashcached",
   "version": "5.1.2",
   "description": "memcached server built on [bash] + [socat]",
+  "global": true,
+  "repo": "MakeNowJust/bashcached",
   "scripts": [
     "bashcached"
   ]
