@@ -2,9 +2,6 @@
   "name": "bashcached",
   "description": "memcached server built on [bash] + [socat]",
   "global": true,
-  "version": "master",
-  "repo": "MakeNowJust/bashcached",
-  "install": "make install",
   "scripts": [
     "bashcached"
   ]
