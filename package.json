@@ -4,6 +4,7 @@
   "description": "memcached server built on [bash] + [socat]",
   "global": true,
   "repo": "MakeNowJust/bashcached",
+  "install": "make install",
   "scripts": [
     "bashcached"
   ]
