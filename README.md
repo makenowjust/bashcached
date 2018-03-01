@@ -1,5 +1,7 @@
 # bashcached
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/MakeNowJust/bashcached.svg)](https://greenkeeper.io/)
+
 > memcached server built on [bash] + [socat]
 
 [bash]: https://www.gnu.org/software/bash/
