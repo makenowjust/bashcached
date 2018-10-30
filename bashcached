@@ -52,48 +52,48 @@ else
   (( ${check-60} != 0 )) && while echo; do sleep "${check-60}"; done >"$BASHCACHED_PIPE" &
 
   while true; do cat "$BASHCACHED_PIPE"; done | while read -r line; do
-    cmd='' recv='' send=; eval "$line"; cmd=($cmd) time=$(printf '%(%s)T' -1)
+    cmd='' recv='' send=; eval "$line"; read -ra cmd<<<"$cmd"; time=$(printf '%(%s)T' -1)
     (( time - before >= ${check-60} )) && for k in "${!exptime[@]}"; do
       ! cache_has $k && cache_delete $k; done && before=$time
     [[ ! -p $recv ]] && continue
     case ${cmd[0]} in
-    set) read_data ${cmd[4]} || return 1; cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} "$d"
-      [[ ${cmd[5]} != noreply ]] && echo -e "STORED\r">"$recv";;
-    add) read_data ${cmd[4]} || return 1; ! cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} "$d" &&
+    set) read_data "${cmd[4]}" || return 1; cache_set "${cmd[1]}" "${cmd[2]}" "${cmd[3]}" "$d"
+      [[ "${cmd[5]}" != noreply ]] && echo -e 'STORED\r'>"$recv";;
+    add) read_data "${cmd[4]}" || return 1; ! cache_has "${cmd[1]}" && cache_set "${cmd[1]}" "${cmd[2]}" "${cmd[3]}" "$d" &&
         result=STORED || result=NOT_STORED
-      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
-    replace) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} "$d" &&
+      [[ "${cmd[5]}" != noreply ]] && echo -e "$result\\r">"$recv";;
+    replace) read_data "${cmd[4]}" || return 1; cache_has "${cmd[1]}" && cache_set "${cmd[1]}" "${cmd[2]}" "${cmd[3]}" "$d" &&
         result=STORED || result=NOT_STORED
-      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
-    append) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_update ${cmd[1]} \
+      [[ "${cmd[5]}" != noreply ]] && echo -e "$result\\r">"$recv";;
+    append) read_data "${cmd[4]}" || return 1; cache_has "${cmd[1]}" && cache_update "${cmd[1]}" \
         "$(base64_cat "${data[${cmd[1]}]}" "$d")" && result=STORED || result=NOT_STORED
-      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
-    prepend) read_data ${cmd[4]} || return 1; cache_has ${cmd[1]} && cache_update ${cmd[1]} \
+      [[ "${cmd[5]}" != noreply ]] && echo -e "$result\\r">"$recv";;
+    prepend) read_data "${cmd[4]}" || return 1; cache_has "${cmd[1]}" && cache_update "${cmd[1]}" \
         "$(base64_cat "$d" "${data[${cmd[1]}]}")" && result=STORED || result=NOT_STORED
-      [[ ${cmd[5]} != noreply ]] && echo -e "$result\r">"$recv";;
-    cas) read_data ${cmd[4]} || return 1; if ! cache_has ${cmd[1]}; then result=NOT_FOUND
-      else [[ ${casUnique[${cmd[1]}]} -eq ${cmd[5]} ]] && cache_set ${cmd[1]} ${cmd[2]} ${cmd[3]} "$d" &&
+      [[ "${cmd[5]}" != noreply ]] && echo -e "$result\\r">"$recv";;
+    cas) read_data "${cmd[4]}" || return 1; if ! cache_has "${cmd[1]}"; then result=NOT_FOUND
+      else [[ "${casUnique[${cmd[1]}]}" -eq "${cmd[5]}" ]] && cache_set "${cmd[1]}" "${cmd[2]}" "${cmd[3]}" "$d" &&
         result=STORED || result=EXISTS; fi
-      [[ ${cmd[6]} != noreply ]] && echo -e "$result\r">"$recv";;
-    get) (for ((i=1; i < ${#cmd[@]}; i++)); do cache_get ${cmd[$i]}; done
+      [[ "${cmd[6]}" != noreply ]] && echo -e "$result\\r">"$recv";;
+    get) (for ((i=1; i < ${#cmd[@]}; i++)); do cache_get "${cmd[$i]}"; done
       echo -e 'END\r')>"$recv";;
-    gets) (for ((i=1; i < ${#cmd[@]}; i++)); do cache_get ${cmd[$i]} 1; done
+    gets) (for ((i=1; i < ${#cmd[@]}; i++)); do cache_get "${cmd[$i]}" 1; done
       echo -e 'END\r')>"$recv";;
-    delete) cache_has ${cmd[1]} && cache_delete ${cmd[1]} &&
+    delete) cache_has "${cmd[1]}" && cache_delete "${cmd[1]}" &&
         result=DELETED || result=NOT_FOUND
-      [[ ${cmd[2]} != noreply ]] && echo -e "$result\r">"$recv";;
-    incr) cache_has ${cmd[1]} && result=$(($(echo -n "${data[${cmd[1]}]}" | base64 -d) + ${cmd[2]-0})) &&
-        cache_update ${cmd[1]} "$(echo -n $result | base64)" || result=NOT_FOUND
-      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
-    decr) cache_has ${cmd[1]} && result=$(($(echo -n "${data[${cmd[1]}]}" | base64 -d) - ${cmd[2]-0})) &&
-        cache_update ${cmd[1]} "$(echo -n $result | base64)" || result=NOT_FOUND
-      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
-    touch) cache_has ${cmd[1]} &&
-        cache_set ${cmd[1]} "${flags[${cmd[1]}]}" ${cmd[2]} "${data[${cmd[1]}]}" ${casUnique[${cmd[1]}]} &&
+      [[ "${cmd[2]}" != noreply ]] && echo -e "$result\\r">"$recv";;
+    incr) cache_has "${cmd[1]}" && result=$(($(echo -n "${data[${cmd[1]}]}" | base64 -d) + ${cmd[2]-0})) &&
+        cache_update "${cmd[1]}" "$(echo -n "$result" | base64)" || result=NOT_FOUND
+      [[ "${cmd[3]}" != noreply ]] && echo -e "$result\\r">"$recv";;
+    decr) cache_has "${cmd[1]}" && result=$(($(echo -n "${data[${cmd[1]}]}" | base64 -d) - ${cmd[2]-0})) &&
+        cache_update "${cmd[1]}" "$(echo -n $result | base64)" || result=NOT_FOUND
+      [[ "${cmd[3]}" != noreply ]] && echo -e "$result\\r">"$recv";;
+    touch) cache_has "${cmd[1]}" &&
+        cache_set "${cmd[1]}" "${flags[${cmd[1]}]}" "${cmd[2]}" "${data[${cmd[1]}]}" "${casUnique[${cmd[1]}]}" &&
         result=TOUCHED || result=NOT_FOUND
-      [[ ${cmd[3]} != noreply ]] && echo -e "$result\r">"$recv";;
+      [[ "${cmd[3]}" != noreply ]] && echo -e "$result\\r">"$recv";;
     flush_all) for k in "${!exptime[@]}"; do exptime[$k]=$((time + ${cmd[1]-0})); done
-      [[ ${cmd[-1]} != noreply ]] && echo -e "OK\r">"$recv";;
-    version) echo -e "VERSION $VERSION\r">"$recv" &;;
+      [[ "${cmd[-1]}" != noreply ]] && echo -e 'OK\r'>"$recv";;
+    version) echo -e "VERSION $VERSION\\r">"$recv" &;;
     esac; done &
   socat "${protocol-tcp}-listen:${port-25252},reuseaddr,fork" system:"$0"; fi
