@@ -2,7 +2,7 @@
 # bashcached - memcached built on bash + socat
 # (C) TSUYUSATO "MakeNowJust" Kitsune 2016-2018 <make.just.on@gmail.com>
 #
-# USAGE: bashcached [--help] [--version] [--protocol=tcp|unix] [--port=PORT] [--check=CHECK]
+# USAGE: bashcached [--help] [--version] [--license] [--protocol=tcp|unix] [--port=PORT] [--check=CHECK]
 #
 # OPTIONS:
 #   --protocol=tcp|unix      protocol name to bind and listen (default: tcp)
@@ -10,7 +10,8 @@
 #   --check=CHECK            interval to check each cache's expire (default: 60)
 #   --help                   show this help
 #   --version                show bashcached's version
-IFS=$' \t\r' VERSION=5.1.2-bashcached; export LANG=C
+#   --license                show bashcached's license
+IFS=$' \t\r' VERSION=5.2.0-bashcached; export LANG=C
 trap 'exit 0' INT TERM
 
 if [[ "$SOCAT_VERSION" ]]; then
@@ -24,9 +25,9 @@ if [[ "$SOCAT_VERSION" ]]; then
       printf 'recv=%q send=%q cmd=%q\n' "$recv" "$send" "${cmd[*]}" >"$BASHCACHED_PIPE" 2>/dev/null && break; done;;
   esac; done
 else
-  help() { tail -n+2 <"$0" | head -n11 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
-  license() { curl 'https://raw.githubusercontent.com/MakeNowJust/bashcached/master/LICENSE.MIT.md'; echo;
-    curl 'https://raw.githubusercontent.com/MakeNowJust/bashcached/master/LICENSE.%F0%9F%8D%A3.md'; exit; }
+  help() { tail -n+2 <"$0" | head -n12 | cut -c3-; exit; }; version() { echo $VERSION; exit; }
+  license() { curl -s 'https://raw.githubusercontent.com/MakeNowJust/bashcached/master/LICENSE.md'; echo;
+    curl -s 'https://raw.githubusercontent.com/MakeNowJust/bashcached/master/LICENSE.%F0%9F%8D%A3.md'; exit; }
   for v in "$@"; do [[ $v == --* ]] && eval "${v:2}"; done
 
   # global variables
@@ -95,5 +96,4 @@ else
       [[ ${cmd[-1]} != noreply ]] && echo -e "OK\r">"$recv";;
     version) echo -e "VERSION $VERSION\r">"$recv" &;;
     esac; done &
-  socat "${protocol-tcp}-listen:${port-25252},reuseaddr,fork" system:"$0"
-fi
+  socat "${protocol-tcp}-listen:${port-25252},reuseaddr,fork" system:"$0"; fi
