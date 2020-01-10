@@ -61,7 +61,7 @@ $ bpkg install MakeNowJust/bashcached -g
 ```console
 $ ./bashcached --help
 bashcached - memcached built on bash + socat
-(C) TSUYUSATO "MakeNowJust" Kitsune 2016-2018 <make.just.on@gmail.com>
+(C) TSUYUSATO "MakeNowJust" Kitsune 2016-2020 <make.just.on@gmail.com>
 
 USAGE: bashcached [--help] [--version] [--license] [--protocol=tcp|unix] [--port=PORT] [--check=CHECK]
 
