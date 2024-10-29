@@ -5,7 +5,7 @@
 [bash]: https://www.gnu.org/software/bash/
 [socat]: http://www.dest-unreach.org/socat/
 
-[![CircleCI](https://circleci.com/gh/MakeNowJust/bashcached.svg?style=svg)](https://circleci.com/gh/MakeNowJust/bashcached)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/makenowjust/bashcached/test.yml)
 
 ## Feature
 
@@ -53,7 +53,7 @@ $ chmod +x bashcached
 Or, you could use [`bpkg`](https://github.com/bpkg/bpkg) instaed of downloading script:
 
 ```console
-$ bpkg install MakeNowJust/bashcached -g
+$ bpkg install makenowjust/bashcached -g
 ```
 
 ## Usage
