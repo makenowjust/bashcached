@@ -5,7 +5,7 @@
 [bash]: https://www.gnu.org/software/bash/
 [socat]: http://www.dest-unreach.org/socat/
 
-[![CircleCI](https://circleci.com/gh/MakeNowJust/bashcached.svg?style=svg)](https://circleci.com/gh/MakeNowJust/bashcached)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/makenowjust/bashcached/test.yml)
 
 ## Feature
 
@@ -53,7 +53,7 @@ $ chmod +x bashcached
 Or, you could use [`bpkg`](https://github.com/bpkg/bpkg) instaed of downloading script:
 
 ```console
-$ bpkg install MakeNowJust/bashcached -g
+$ bpkg install makenowjust/bashcached -g
 ```
 
 ## Usage
@@ -61,7 +61,7 @@ $ bpkg install MakeNowJust/bashcached -g
 ```console
 $ ./bashcached --help
 bashcached - memcached built on bash + socat
-(C) TSUYUSATO "MakeNowJust" Kitsune 2016-2020 <make.just.on@gmail.com>
+(C) TSUYUSATO "MakeNowJust" Kitsune 2016-2024 <make.just.on@gmail.com>
 
 USAGE: bashcached [--help] [--version] [--license] [--protocol=tcp|unix] [--port=PORT] [--check=CHECK]
 
@@ -89,4 +89,4 @@ quit
 ## License and Copyright
 
 MIT and [:sushi:](https://github.com/MakeNowJust/sushi-ware)
-© TSUYUSATO "[MakeNowJust](https://quine.codes)" Kitsune <<make.just.on@gmail.com>> 2016-2018
+© TSUYUSATO "[MakeNowJust](https://quine.codes)" Kitsune <<make.just.on@gmail.com>> 2016-2024

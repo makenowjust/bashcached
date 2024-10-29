@@ -8,7 +8,7 @@ describe "readme" do
                  .match(%r{(?<=^\$ \.\/bashcached --help\n).*?(?=^\$ )}m)
                  .to_s
     help = `./bashcached --help`
-    readme.must_equal help
+    _(readme).must_equal help
   end
 
   it "example can run" do
@@ -24,18 +24,18 @@ describe "readme" do
         case line = example.shift
         when /\Aversion/
           client << "#{line}\r\n"
-          client.gets.must_equal "#{example.shift}\r\n"
+          _(client.gets).must_equal "#{example.shift}\r\n"
         when /\Aset/
           client << "#{line}\r\n"
           client << "#{example.shift}\r\n"
-          client.gets.must_equal "#{example.shift}\r\n"
+          _(client.gets).must_equal "#{example.shift}\r\n"
         when /\Aget/
           client << "#{line}\r\n"
-          client.gets.must_equal "#{example.shift}\r\n"
-          client.gets.must_equal "#{example.shift}\r\n"
+          _(client.gets).must_equal "#{example.shift}\r\n"
+          _(client.gets).must_equal "#{example.shift}\r\n"
         when /\Aquit/
           client << "#{line}\r\n"
-          client.gets.must_be_nil
+          _(client.gets).must_be_nil
         end
       end
     end

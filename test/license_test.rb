@@ -6,6 +6,6 @@ describe "license" do
 
     license = "#{File.read("LICENSE.md")}\n#{File.read("LICENSE.🍣.md")}"
     output = `./bashcached --license`
-    license.must_equal output
+    _(license).must_equal output
   end
 end

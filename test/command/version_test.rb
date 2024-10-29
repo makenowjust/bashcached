@@ -8,7 +8,7 @@ describe "command/version" do
     with_bashcached_and_client do |client|
       client << "version\r\n"
       version = client.gets
-      version.must_equal "VERSION #{expect_version}\r\n"
+      _(version).must_equal "VERSION #{expect_version}\r\n"
     end
   end
 end
