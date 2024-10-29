@@ -4,7 +4,7 @@ describe "command/quit" do
   it "terminate the client connection" do
     with_bashcached_and_client do |client|
       client << "quit\r\n"
-      client.gets.must_be_nil
+      _(client.gets).must_be_nil
     end
   end
 end

@@ -7,7 +7,7 @@ require "timeout"
 
 TEST_MEMCACHED = ENV.has_key?("TEST_MEMCACHED")
 
-class MiniTest::Test
+class Minitest::Test
   def retry_on_error(times: 10, delay: 0.1, error_class: StandardError)
     (1..times).each do |i|
       begin
@@ -34,7 +34,7 @@ class MiniTest::Test
       end
 
       begin
-        Timeout.timeout(0.1) { thread.value.success?.must_equal true }
+        Timeout.timeout(0.1) { _(thread.value.success?).must_equal true }
       rescue Timeout::Error
         Process.kill "INT", -thread.pid
         # TODO: retry limit is needed?
@@ -81,41 +81,41 @@ class MiniTest::Test
 
   def expect_set(client, key: "test", value:, flags: 0, exptime: 0, noreply: false)
     write_store_command client, "set", key, flags, exptime, value, noreply
-    client.gets.must_equal "STORED\r\n" unless noreply
+    _(client.gets).must_equal "STORED\r\n" unless noreply
   end
 
   def expect_add(client, key: "test", value:, flags: 0, exptime: 0, noreply: false, not_stored: false)
     write_store_command client, "add", key, flags, exptime, value, noreply
     unless noreply
-      client.gets.must_equal "#{not_stored ? "NOT_STORED" : "STORED"}\r\n"
+      _(client.gets).must_equal "#{not_stored ? "NOT_STORED" : "STORED"}\r\n"
     end
   end
 
   def expect_replace(client, key: "test", value:, flags: 0, exptime: 0, noreply: false, not_stored: false)
     write_store_command client, "replace", key, flags, exptime, value, noreply
     unless noreply
-      client.gets.must_equal "#{not_stored ? "NOT_STORED" : "STORED"}\r\n"
+      _(client.gets).must_equal "#{not_stored ? "NOT_STORED" : "STORED"}\r\n"
     end
   end
 
   def expect_append(client, key: "test", value:, flags: 0, exptime: 0, noreply: false, not_stored: false)
     write_store_command client, "append", key, flags, exptime, value, noreply
     unless noreply
-      client.gets.must_equal "#{not_stored ? "NOT_STORED" : "STORED"}\r\n"
+      _(client.gets).must_equal "#{not_stored ? "NOT_STORED" : "STORED"}\r\n"
     end
   end
 
   def expect_prepend(client, key: "test", value:, flags: 0, exptime: 0, noreply: false, not_stored: false)
     write_store_command client, "prepend", key, flags, exptime, value, noreply
     unless noreply
-      client.gets.must_equal "#{not_stored ? "NOT_STORED" : "STORED"}\r\n"
+      _(client.gets).must_equal "#{not_stored ? "NOT_STORED" : "STORED"}\r\n"
     end
   end
 
   def expect_cas(client, key: "test", value:, flags: 0, exptime: 0, cas_unique:, noreply: false, result:)
     write_store_command client, "cas", key, flags, exptime, value, noreply, cas_unique
     unless noreply
-      client.gets.must_equal "#{result}\r\n"
+      _(client.gets).must_equal "#{result}\r\n"
     end
   end
 
@@ -125,7 +125,7 @@ class MiniTest::Test
 
   def expect_not_get(client, key: "test")
     client << "get #{key}\r\n"
-    client.gets.must_equal "END\r\n"
+    _(client.gets).must_equal "END\r\n"
   end
 
   def expect_gets(client, key: "test", value:, cas_unique:, flags: 0)
@@ -153,40 +153,40 @@ class MiniTest::Test
         expect_flags = expect[:flags]&.to_s || "0"
         expect_cas_unique = expect[:cas_unique]&.to_s
 
-        $~[:flags].must_equal expect_flags
-        $~[:cas_unique].must_equal expect_cas_unique if expect_cas_unique
-        client.read($~[:bytes].to_i).must_equal expect_value.b
-        client.gets.must_equal "\r\n"
+        _($~[:flags]).must_equal expect_flags
+        _($~[:cas_unique]).must_equal expect_cas_unique if expect_cas_unique
+        _(client.read($~[:bytes].to_i)).must_equal expect_value.b
+        _(client.gets).must_equal "\r\n"
       end
     end
-    client.gets.must_equal "END\r\n"
+    _(client.gets).must_equal "END\r\n"
   end
 
   def expect_delete(client, key: "test", noreply: false, not_found: false)
     client << "delete #{key}#{noreply ? " noreply" : ""}\r\n"
     unless noreply
-      client.gets.must_equal "#{not_found ? "NOT_FOUND" : "DELETED"}\r\n"
+      _(client.gets).must_equal "#{not_found ? "NOT_FOUND" : "DELETED"}\r\n"
     end
   end
 
   def expect_touch(client, key: "test", exptime:, noreply: false, not_found: false)
     client << "touch #{key} #{exptime}#{noreply ? " noreply" : ""}\r\n"
     unless noreply
-      client.gets.must_equal "#{not_found ? "NOT_FOUND" : "TOUCHED"}\r\n"
+      _(client.gets).must_equal "#{not_found ? "NOT_FOUND" : "TOUCHED"}\r\n"
     end
   end
 
   def expect_incr(client, key: "test", value: 1, noreply: false, expect:)
     client << "incr #{key} #{value}#{noreply ? " noreply" : ""}\r\n"
     unless noreply
-      client.gets.must_equal "#{expect}\r\n"
+      _(client.gets).must_equal "#{expect}\r\n"
     end
   end
 
   def expect_decr(client, key: "test", value: 1, noreply: false, expect:)
     client << "decr #{key} #{value}#{noreply ? " noreply" : ""}\r\n"
     unless noreply
-      client.gets.must_equal "#{expect}\r\n"
+      _(client.gets).must_equal "#{expect}\r\n"
     end
   end
 end

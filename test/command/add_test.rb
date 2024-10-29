@@ -45,7 +45,7 @@ describe "command/add" do
       expect_add client, value: "test", noreply: true
       expect_get client, value: "test"
       client << "quit\r\n"
-      client.gets.must_be_nil
+      _(client.gets).must_be_nil
     end
   end
 end

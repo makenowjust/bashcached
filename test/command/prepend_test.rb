@@ -50,7 +50,7 @@ describe "command/preppend" do
       expect_append client, value: "test", noreply: true
       expect_not_get client
       client << "quit\r\n"
-      client.gets.must_be_nil
+      _(client.gets).must_be_nil
     end
   end
 end
