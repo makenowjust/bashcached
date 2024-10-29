@@ -23,5 +23,7 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
+    - name: Install socat
+      run: sudo apt-get install -y socat
     - name: Run test
       run: bundle exec rake test
